@@ -139,7 +139,7 @@ Backend steps use curl; UI steps were checked manually in the browser.
 - `better-sqlite3` is pinned to v11 because v13 requires Node 22.
 
 ## Time spent
-About 2.5 hours.
+About 3 hours.
 
 ## AI use disclosure
 This project was built with the help of Claude Code (an AI coding assistant) in stages: I gave the
