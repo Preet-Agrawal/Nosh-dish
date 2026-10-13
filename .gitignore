@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.env
+backend/data/dishes.db
+backend/data/*.db-journal
+*.log
