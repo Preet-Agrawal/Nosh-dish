@@ -71,7 +71,13 @@ export default function DishCard({ dish, onSaved }) {
   }
 
   function handleDiscard() {
-    resetDraftTo(dish);
+    // After a conflict, "saved" really means the newer server copy, so discard to that
+    if (conflictDish) {
+      onSaved(conflictDish);
+      resetDraftTo(conflictDish);
+    } else {
+      resetDraftTo(dish);
+    }
   }
 
   // We never auto-retry with the new version: the user must choose to throw away their draft

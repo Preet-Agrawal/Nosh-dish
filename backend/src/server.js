@@ -20,6 +20,10 @@ app.use((err, req, res, next) => {
     if (err.currentDish) body.currentDish = err.currentDish;
     return res.status(err.status).json(body);
   }
+  // Other client errors from Express/body-parser (e.g. 413 payload too large)
+  if (err.status && err.status < 500) {
+    return res.status(err.status).json({ error: 'VALIDATION_ERROR', message: err.expose ? err.message : 'Invalid request' });
+  }
   console.error(err);
   res.status(500).json({ error: 'SERVER_ERROR', message: 'Something went wrong' });
 });

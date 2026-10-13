@@ -26,6 +26,7 @@ export default function App() {
       fetchDishes()
         .then((latest) => {
           setConnectionLost(false);
+          setError(''); // a successful poll also clears a failed initial load
           // A poll can start before a save finishes and arrive after it.
           // Never let an older version overwrite a newer one we already have.
           setDishes((current) =>
@@ -44,7 +45,10 @@ export default function App() {
 
   // Called by a card after a successful save (or "Reload latest")
   function handleDishSaved(updated) {
-    setDishes((current) => current.map((d) => (d.dishId === updated.dishId ? updated : d)));
+    // Never replace a dish with an older version
+    setDishes((current) =>
+      current.map((d) => (d.dishId === updated.dishId && updated.version >= d.version ? updated : d))
+    );
   }
 
   return (
