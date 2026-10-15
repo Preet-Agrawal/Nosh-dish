@@ -38,6 +38,12 @@ npm run dev           # http://localhost:5173
 ```
 
 Extra: `npm run seed:test` (in `backend`) adds one more dish, `test-1`, with an invalid image URL.
+It goes into the **main** database, so it appears on the dashboard. To remove it:
+`sqlite3 backend/data/dishes.db "DELETE FROM dishes WHERE dish_id='test-1'"`, or seed it into a
+separate database instead with `DB_PATH=./data/test.db npm run seed:test` (and run the backend with the same `DB_PATH` to view it).
+
+**Migrations:** no separate migration step is needed. The schema is created automatically on
+first start in `backend/src/db.js`.
 
 ### Environment examples
 `backend/.env.example`
@@ -66,8 +72,8 @@ curl -s -X PATCH localhost:4000/dishes/1 -H "$H" \
 | Status | When | Body |
 |---|---|---|
 | 200 | Update succeeded | the updated dish |
-| 400 | Bad body, empty name or invalid image URL when publishing | `{error:"VALIDATION_ERROR", message}` |
-| 404 | Unknown dishId | `{error:"NOT_FOUND", message}` |
+| 400 | Bad body, invalid dishId format (letters, digits, `-`, `_`; max 64), empty name or invalid image URL when publishing | `{error:"VALIDATION_ERROR", message}` |
+| 404 | Unknown dishId or unknown route | `{error:"NOT_FOUND", message}` |
 | 409 | `expectedVersion` is stale | `{error:"VERSION_CONFLICT", message, currentDish}` |
 | 500 | Unexpected error | `{error:"SERVER_ERROR", message}` |
 
@@ -90,7 +96,7 @@ The update is one statement:
 The database checks the version and writes in a single step, so two simultaneous saves
 cannot both succeed. Reading the version, comparing in JavaScript and then updating would leave
 a gap between the read and the write. If 0 rows change, the server returns 409 with the current
-dish, and the UI never auto-retries: the user chooses whether to discard their draft.
+dish, and the UI never auto-retries. After a conflict, Discard restores the last loaded values; only "Reload latest" (with a confirmation) loads the newer data.
 
 The "name must not be empty" rule applies only when publishing (`isPublished: true`), as the
 assignment words it. An unpublished draft dish may have an empty name.
@@ -101,7 +107,7 @@ Start both servers and run `npm run seed` and `npm run seed:test` (in `backend`)
 Backend steps use curl; UI steps were checked manually in the browser.
 
 1. **Seeding is idempotent** (verified): run `npm run seed` twice. Second run prints `added 0, skipped 5`.
-2. **Draft and save** (verified): edit a name. "Unsaved changes" and a highlight appear. Save: the badge goes away and version increases by 1. Discard restores saved values.
+2. **Draft and save** (verified): edit a name. "Unsaved changes" and a highlight appear. Save: the badge goes away and version increases by 1. Discard restores the last loaded values.
 3. **Two-tab conflict** (verified): open the app in two tabs. In tab B type a change in dish 1 (don't save yet). Save dish 1 in tab A. Now Save in tab B: you see "Someone else updated this dish." and your draft stays. "Reload latest" asks for confirmation, then shows tab A's values. (A tab with no unsaved edits is updated by polling within 5 seconds, so type in tab B *before* saving in tab A.)
 4. **Backend down** (verified): stop the backend. Within ~5 seconds the "Connection lost, retrying…" banner appears and the cards stay. Saving shows "Cannot reach the server" and keeps the draft. Restart the backend: the banner disappears. Loading the page with the backend down shows an error with a Retry button.
 5. **Invalid image URL** (verified): after `npm run seed:test`, tick Published on "Test Dish" (`test-1`) and Save. The server rejects it with a 400 message and the draft stays. Unticked, saving a new name works. Same via curl:

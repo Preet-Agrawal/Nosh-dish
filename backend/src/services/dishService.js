@@ -39,7 +39,16 @@ function isValidImageUrl(value) {
   }
 }
 
+// Dish IDs are short ids like "1" or "test-1": letters, digits, "-" and "_" only
+function isValidDishId(value) {
+  return typeof value === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(value);
+}
+
 function updateDish(dishId, body) {
+  if (!isValidDishId(dishId)) {
+    throw fail(400, 'VALIDATION_ERROR', 'dishId must be 1-64 letters, digits, "-" or "_"');
+  }
+
   const { dishName, isPublished, expectedVersion } = body || {};
 
   // 1. Body validation -> 400

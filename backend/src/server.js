@@ -9,6 +9,11 @@ app.use(express.json());
 
 app.use('/dishes', dishesRouter);
 
+// Unknown routes get JSON too (instead of Express's default HTML page)
+app.use((req, res) => {
+  res.status(404).json({ error: 'NOT_FOUND', message: `Route ${req.method} ${req.path} not found` });
+});
+
 // One error handler gives every error the same JSON format
 app.use((err, req, res, next) => {
   // Bad JSON body from express.json() is a client mistake -> 400
